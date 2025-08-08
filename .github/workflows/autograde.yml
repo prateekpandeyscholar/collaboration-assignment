@@ -1,0 +1,45 @@
+name: Autograde Collaboration
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  check-collaboration:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check team_greetings.md exists
+        run: |
+          if [ ! -f team_greetings.md ]; then
+            echo "❌ Missing team_greetings.md" && exit 1
+          fi
+          echo "✅ team_greetings.md found"
+
+      - name: Check that multiple roll numbers are present
+        run: |
+          ROLL_COUNT=$(grep -E '^[0-9]{3}[A-Z][0-9]{3}:' team_greetings.md | wc -l)
+          if [ "$ROLL_COUNT" -lt 2 ]; then
+            echo "❌ Less than 2 valid roll numbers found" && exit 1
+          fi
+          echo "✅ Multiple roll numbers found"
+
+      - name: Check multiple commit authors
+        run: |
+          AUTHORS=$(git log --format='%an' | sort | uniq | wc -l)
+          if [ "$AUTHORS" -lt 2 ]; then
+            echo "❌ Only one commit author found" && exit 1
+          fi
+          echo "✅ Multiple commit authors found"
+
+      - name: Check branch naming convention
+        run: |
+          BRANCHES=$(git branch -r | grep -Ec "origin/branch-[0-9]{3}[A-Z][0-9]{3}")
+          if [ "$BRANCHES" -lt 2 ]; then
+            echo "❌ Not enough properly named branches" && exit 1
+          fi
+          echo "✅ Branch naming correct"
