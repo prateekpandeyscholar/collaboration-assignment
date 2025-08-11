@@ -19,12 +19,15 @@ jobs:
       - name: Initialize score
         run: echo "SCORE=0" >> $GITHUB_ENV
 
-      # 1. Check file exists
+      # 1. File exists
       - name: Check if team_greetings.md exists
         run: |
           if [ -f team_greetings.md ]; then
             echo "File exists ✅ (+1)"
-            echo "SCORE=$((SCORE+1))" >> $GITHUB_ENV
+            CUR=$(grep SCORE= $GITHUB_ENV | cut -d= -f2)
+            CUR=$((CUR+1))
+            sed -i "/SCORE=/d" $GITHUB_ENV
+            echo "SCORE=$CUR" >> $GITHUB_ENV
           else
             echo "Missing team_greetings.md ❌"
           fi
@@ -35,7 +38,10 @@ jobs:
         run: |
           if grep -Eq "[0-9]{3}[A-Z][0-9]{3}" team_greetings.md 2>/dev/null; then
             echo "Roll number format correct ✅ (+1)"
-            echo "SCORE=$((SCORE+1))" >> $GITHUB_ENV
+            CUR=$(grep SCORE= $GITHUB_ENV | cut -d= -f2)
+            CUR=$((CUR+1))
+            sed -i "/SCORE=/d" $GITHUB_ENV
+            echo "SCORE=$CUR" >> $GITHUB_ENV
           else
             echo "Roll number format incorrect ❌"
           fi
@@ -47,19 +53,25 @@ jobs:
           COUNT=$(grep -Eo "[0-9]{3}[A-Z][0-9]{3}" team_greetings.md 2>/dev/null | sort -u | wc -l)
           if [ "$COUNT" -gt 2 ]; then
             echo "More than 2 roll numbers ✅ (+1)"
-            echo "SCORE=$((SCORE+1))" >> $GITHUB_ENV
+            CUR=$(grep SCORE= $GITHUB_ENV | cut -d= -f2)
+            CUR=$((CUR+1))
+            sed -i "/SCORE=/d" $GITHUB_ENV
+            echo "SCORE=$CUR" >> $GITHUB_ENV
           else
             echo "Not enough roll numbers ❌"
           fi
         shell: bash
 
-      # 4. Branch name format correct (e.g., feature/231B227)
+      # 4. Branch name format correct
       - name: Check branch name format
         run: |
           BRANCH=$(echo "${GITHUB_REF#refs/heads/}")
           if [[ "$BRANCH" =~ ^feature/[0-9]{3}[A-Z][0-9]{3}$ ]]; then
             echo "Branch name format correct ✅ (+2)"
-            echo "SCORE=$((SCORE+2))" >> $GITHUB_ENV
+            CUR=$(grep SCORE= $GITHUB_ENV | cut -d= -f2)
+            CUR=$((CUR+2))
+            sed -i "/SCORE=/d" $GITHUB_ENV
+            echo "SCORE=$CUR" >> $GITHUB_ENV
           else
             echo "Branch name format incorrect ❌"
           fi
@@ -68,11 +80,13 @@ jobs:
       # 5. Check collaborators
       - name: Check collaborators via GitHub API
         run: |
-          COLLAB_COUNT=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-            https://api.github.com/repos/${{ github.repository }}/collaborators | jq '. | length')
+          COLLAB_COUNT=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}"             https://api.github.com/repos/${{ github.repository }}/collaborators | jq '. | length')
           if [ "$COLLAB_COUNT" -ge 3 ]; then
             echo "Has 2+ collaborators ✅ (+2)"
-            echo "SCORE=$((SCORE+2))" >> $GITHUB_ENV
+            CUR=$(grep SCORE= $GITHUB_ENV | cut -d= -f2)
+            CUR=$((CUR+2))
+            sed -i "/SCORE=/d" $GITHUB_ENV
+            echo "SCORE=$CUR" >> $GITHUB_ENV
           else
             echo "Not enough collaborators ❌"
           fi
@@ -84,7 +98,10 @@ jobs:
           AUTHORS=$(git log --format='%aN' | sort -u | wc -l)
           if [ "$AUTHORS" -ge 2 ]; then
             echo "Has 2+ unique commit authors ✅ (+2)"
-            echo "SCORE=$((SCORE+2))" >> $GITHUB_ENV
+            CUR=$(grep SCORE= $GITHUB_ENV | cut -d= -f2)
+            CUR=$((CUR+2))
+            sed -i "/SCORE=/d" $GITHUB_ENV
+            echo "SCORE=$CUR" >> $GITHUB_ENV
           else
             echo "Not enough unique commit authors ❌"
           fi
@@ -93,11 +110,13 @@ jobs:
       # 7. Merged PR check
       - name: Check merged PRs
         run: |
-          MERGED_COUNT=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-            "https://api.github.com/repos/${{ github.repository }}/pulls?state=closed" | jq '[.[] | select(.merged_at != null)] | length')
+          MERGED_COUNT=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}"             "https://api.github.com/repos/${{ github.repository }}/pulls?state=closed" | jq '[.[] | select(.merged_at != null)] | length')
           if [ "$MERGED_COUNT" -ge 1 ]; then
             echo "Has 1+ merged PR ✅ (+1)"
-            echo "SCORE=$((SCORE+1))" >> $GITHUB_ENV
+            CUR=$(grep SCORE= $GITHUB_ENV | cut -d= -f2)
+            CUR=$((CUR+1))
+            sed -i "/SCORE=/d" $GITHUB_ENV
+            echo "SCORE=$CUR" >> $GITHUB_ENV
           else
             echo "No merged PR ❌"
           fi
@@ -105,5 +124,4 @@ jobs:
 
       # Final score
       - name: Final score
-        run: echo "Final Score: $SCORE / 10"
-
+        run: cat $GITHUB_ENV | grep SCORE=
