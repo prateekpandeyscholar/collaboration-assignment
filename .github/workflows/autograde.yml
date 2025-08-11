@@ -1,45 +1,109 @@
-name: Autograde Collaboration
+name: Autograding
 
 on:
   push:
-    branches: [ "main" ]
+  workflow_dispatch:
 
 jobs:
-  check-collaboration:
+  autograde:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+      metadata: read
+
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+        uses: actions/checkout@v3
 
-      - name: Check team_greetings.md exists
-        run: |
-          if [ ! -f team_greetings.md ]; then
-            echo "❌ Missing team_greetings.md" && exit 1
-          fi
-          echo "✅ team_greetings.md found"
+      - name: Initialize score
+        run: echo "SCORE=0" >> $GITHUB_ENV
 
-      - name: Check that multiple roll numbers are present
+      # 1. Check file exists
+      - name: Check if team_greetings.md exists
         run: |
-          ROLL_COUNT=$(grep -E '^[0-9]{3}[A-Z][0-9]{3}:' team_greetings.md | wc -l)
-          if [ "$ROLL_COUNT" -lt 2 ]; then
-            echo "❌ Less than 2 valid roll numbers found" && exit 1
+          if [ -f team_greetings.md ]; then
+            echo "File exists ✅ (+1)"
+            echo "SCORE=$((SCORE+1))" >> $GITHUB_ENV
+          else
+            echo "Missing team_greetings.md ❌"
           fi
-          echo "✅ Multiple roll numbers found"
+        shell: bash
 
-      - name: Check multiple commit authors
+      # 2. Roll number format correct
+      - name: Check roll number format
         run: |
-          AUTHORS=$(git log --format='%an' | sort | uniq | wc -l)
-          if [ "$AUTHORS" -lt 2 ]; then
-            echo "❌ Only one commit author found" && exit 1
+          if grep -Eq "[0-9]{3}[A-Z][0-9]{3}" team_greetings.md 2>/dev/null; then
+            echo "Roll number format correct ✅ (+1)"
+            echo "SCORE=$((SCORE+1))" >> $GITHUB_ENV
+          else
+            echo "Roll number format incorrect ❌"
           fi
-          echo "✅ Multiple commit authors found"
+        shell: bash
 
-      - name: Check branch naming convention
+      # 3. Roll number count > 2
+      - name: Check roll number count
         run: |
-          BRANCHES=$(git branch -r | grep -Ec "origin/branch-[0-9]{3}[A-Z][0-9]{3}")
-          if [ "$BRANCHES" -lt 2 ]; then
-            echo "❌ Not enough properly named branches" && exit 1
+          COUNT=$(grep -Eo "[0-9]{3}[A-Z][0-9]{3}" team_greetings.md 2>/dev/null | sort -u | wc -l)
+          if [ "$COUNT" -gt 2 ]; then
+            echo "More than 2 roll numbers ✅ (+1)"
+            echo "SCORE=$((SCORE+1))" >> $GITHUB_ENV
+          else
+            echo "Not enough roll numbers ❌"
           fi
-          echo "✅ Branch naming correct"
+        shell: bash
+
+      # 4. Branch name format correct (e.g., feature/231B227)
+      - name: Check branch name format
+        run: |
+          BRANCH=$(echo "${GITHUB_REF#refs/heads/}")
+          if [[ "$BRANCH" =~ ^feature/[0-9]{3}[A-Z][0-9]{3}$ ]]; then
+            echo "Branch name format correct ✅ (+2)"
+            echo "SCORE=$((SCORE+2))" >> $GITHUB_ENV
+          else
+            echo "Branch name format incorrect ❌"
+          fi
+        shell: bash
+
+      # 5. Check collaborators
+      - name: Check collaborators via GitHub API
+        run: |
+          COLLAB_COUNT=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            https://api.github.com/repos/${{ github.repository }}/collaborators | jq '. | length')
+          if [ "$COLLAB_COUNT" -ge 3 ]; then
+            echo "Has 2+ collaborators ✅ (+2)"
+            echo "SCORE=$((SCORE+2))" >> $GITHUB_ENV
+          else
+            echo "Not enough collaborators ❌"
+          fi
+        shell: bash
+
+      # 6. Unique commit authors
+      - name: Check unique commit authors
+        run: |
+          AUTHORS=$(git log --format='%aN' | sort -u | wc -l)
+          if [ "$AUTHORS" -ge 2 ]; then
+            echo "Has 2+ unique commit authors ✅ (+2)"
+            echo "SCORE=$((SCORE+2))" >> $GITHUB_ENV
+          else
+            echo "Not enough unique commit authors ❌"
+          fi
+        shell: bash
+
+      # 7. Merged PR check
+      - name: Check merged PRs
+        run: |
+          MERGED_COUNT=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            "https://api.github.com/repos/${{ github.repository }}/pulls?state=closed" | jq '[.[] | select(.merged_at != null)] | length')
+          if [ "$MERGED_COUNT" -ge 1 ]; then
+            echo "Has 1+ merged PR ✅ (+1)"
+            echo "SCORE=$((SCORE+1))" >> $GITHUB_ENV
+          else
+            echo "No merged PR ❌"
+          fi
+        shell: bash
+
+      # Final score
+      - name: Final score
+        run: echo "Final Score: $SCORE / 10"
+
