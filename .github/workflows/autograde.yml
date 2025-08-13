@@ -128,7 +128,7 @@ jobs:
             fi
           fi
 
-      # Final score and GitHub Classroom output
+      # Final score output for GitHub Classroom
       - name: Save score for GitHub Classroom
         run: |
           SCORE_VAL=$(grep SCORE= $GITHUB_ENV | cut -d= -f2 || echo 0)
