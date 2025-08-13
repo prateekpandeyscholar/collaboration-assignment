@@ -23,7 +23,7 @@ jobs:
         run: |
           if [ -f team_greetings.md ]; then
             echo "File exists ✅ (+1)"
-            CUR=$(grep SCORE= $GITHUB_ENV | cut -d= -f2)
+            CUR=$(grep SCORE= $GITHUB_ENV | cut -d= -f2 || echo 0)
             CUR=$((CUR+1))
             sed -i "/SCORE=/d" $GITHUB_ENV
             echo "SCORE=$CUR" >> $GITHUB_ENV
@@ -37,7 +37,7 @@ jobs:
         run: |
           if grep -Eq "[0-9]{3}[A-Z][0-9]{3}" team_greetings.md 2>/dev/null; then
             echo "Roll number format correct ✅ (+1)"
-            CUR=$(grep SCORE= $GITHUB_ENV | cut -d= -f2)
+            CUR=$(grep SCORE= $GITHUB_ENV | cut -d= -f2 || echo 0)
             CUR=$((CUR+1))
             sed -i "/SCORE=/d" $GITHUB_ENV
             echo "SCORE=$CUR" >> $GITHUB_ENV
@@ -52,7 +52,7 @@ jobs:
           COUNT=$(grep -Eo "[0-9]{3}[A-Z][0-9]{3}" team_greetings.md 2>/dev/null | sort -u | wc -l)
           if [ "$COUNT" -gt 2 ]; then
             echo "More than 2 roll numbers ✅ (+1)"
-            CUR=$(grep SCORE= $GITHUB_ENV | cut -d= -f2)
+            CUR=$(grep SCORE= $GITHUB_ENV | cut -d= -f2 || echo 0)
             CUR=$((CUR+1))
             sed -i "/SCORE=/d" $GITHUB_ENV
             echo "SCORE=$CUR" >> $GITHUB_ENV
@@ -67,7 +67,7 @@ jobs:
           BRANCH=$(echo "${GITHUB_REF#refs/heads/}")
           if [[ "$BRANCH" =~ ^feature/[0-9]{3}[A-Z][0-9]{3}$ ]]; then
             echo "Branch name format correct ✅ (+2)"
-            CUR=$(grep SCORE= $GITHUB_ENV | cut -d= -f2)
+            CUR=$(grep SCORE= $GITHUB_ENV | cut -d= -f2 || echo 0)
             CUR=$((CUR+2))
             sed -i "/SCORE=/d" $GITHUB_ENV
             echo "SCORE=$CUR" >> $GITHUB_ENV
@@ -88,7 +88,7 @@ jobs:
             COLLAB_COUNT=$(echo "$RESP" | jq '. | length')
             if [ "$COLLAB_COUNT" -ge 3 ]; then
               echo "Has 2+ collaborators ✅ (+2)"
-              CUR=$(grep SCORE= $GITHUB_ENV | cut -d= -f2)
+              CUR=$(grep SCORE= $GITHUB_ENV | cut -d= -f2 || echo 0)
               CUR=$((CUR+2))
               sed -i "/SCORE=/d" $GITHUB_ENV
               echo "SCORE=$CUR" >> $GITHUB_ENV
@@ -104,7 +104,7 @@ jobs:
           AUTHORS=$(git log --format='%aN' | sort -u | wc -l)
           if [ "$AUTHORS" -ge 2 ]; then
             echo "Has 2+ unique commit authors ✅ (+2)"
-            CUR=$(grep SCORE= $GITHUB_ENV | cut -d= -f2)
+            CUR=$(grep SCORE= $GITHUB_ENV | cut -d= -f2 || echo 0)
             CUR=$((CUR+2))
             sed -i "/SCORE=/d" $GITHUB_ENV
             echo "SCORE=$CUR" >> $GITHUB_ENV
@@ -125,7 +125,7 @@ jobs:
             MERGED_COUNT=$(echo "$RESP" | jq '[.[] | select(.merged_at != null)] | length')
             if [ "$MERGED_COUNT" -ge 1 ]; then
               echo "Has 1+ merged PR ✅ (+1)"
-              CUR=$(grep SCORE= $GITHUB_ENV | cut -d= -f2)
+              CUR=$(grep SCORE= $GITHUB_ENV | cut -d= -f2 || echo 0)
               CUR=$((CUR+1))
               sed -i "/SCORE=/d" $GITHUB_ENV
               echo "SCORE=$CUR" >> $GITHUB_ENV
@@ -137,4 +137,4 @@ jobs:
 
       # Final score
       - name: Final score
-        run: grep SCORE= $GITHUB_ENV
+        run: grep SCORE= $GITHUB_ENV || echo "SCORE=0"
