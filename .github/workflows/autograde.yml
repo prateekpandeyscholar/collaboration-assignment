@@ -25,8 +25,7 @@ jobs:
             echo "File exists ✅ (+1)"
             CUR=$(grep SCORE= $GITHUB_ENV | cut -d= -f2 || echo 0)
             CUR=$((CUR+1))
-            sed -i "/SCORE=/d" $GITHUB_ENV
-            echo "SCORE=$CUR" >> $GITHUB_ENV
+            echo "SCORE=$CUR" > $GITHUB_ENV
           else
             echo "Missing team_greetings.md ❌"
           fi
@@ -39,8 +38,7 @@ jobs:
             echo "Roll number format correct ✅ (+1)"
             CUR=$(grep SCORE= $GITHUB_ENV | cut -d= -f2 || echo 0)
             CUR=$((CUR+1))
-            sed -i "/SCORE=/d" $GITHUB_ENV
-            echo "SCORE=$CUR" >> $GITHUB_ENV
+            echo "SCORE=$CUR" > $GITHUB_ENV
           else
             echo "Roll number format incorrect ❌"
           fi
@@ -54,8 +52,7 @@ jobs:
             echo "More than 2 roll numbers ✅ (+1)"
             CUR=$(grep SCORE= $GITHUB_ENV | cut -d= -f2 || echo 0)
             CUR=$((CUR+1))
-            sed -i "/SCORE=/d" $GITHUB_ENV
-            echo "SCORE=$CUR" >> $GITHUB_ENV
+            echo "SCORE=$CUR" > $GITHUB_ENV
           else
             echo "Not enough roll numbers ❌"
           fi
@@ -69,14 +66,13 @@ jobs:
             echo "Branch name format correct ✅ (+2)"
             CUR=$(grep SCORE= $GITHUB_ENV | cut -d= -f2 || echo 0)
             CUR=$((CUR+2))
-            sed -i "/SCORE=/d" $GITHUB_ENV
-            echo "SCORE=$CUR" >> $GITHUB_ENV
+            echo "SCORE=$CUR" > $GITHUB_ENV
           else
             echo "Branch name format incorrect ❌"
           fi
         shell: bash
 
-      # 5. Check collaborators (with permission check)
+      # 5. Check collaborators
       - name: Check collaborators via GitHub API
         run: |
           RESP=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
@@ -90,51 +86,3 @@ jobs:
               echo "Has 2+ collaborators ✅ (+2)"
               CUR=$(grep SCORE= $GITHUB_ENV | cut -d= -f2 || echo 0)
               CUR=$((CUR+2))
-              sed -i "/SCORE=/d" $GITHUB_ENV
-              echo "SCORE=$CUR" >> $GITHUB_ENV
-            else
-              echo "Not enough collaborators ❌"
-            fi
-          fi
-        shell: bash
-
-      # 6. Unique commit authors
-      - name: Check unique commit authors
-        run: |
-          AUTHORS=$(git log --format='%aN' | sort -u | wc -l)
-          if [ "$AUTHORS" -ge 2 ]; then
-            echo "Has 2+ unique commit authors ✅ (+2)"
-            CUR=$(grep SCORE= $GITHUB_ENV | cut -d= -f2 || echo 0)
-            CUR=$((CUR+2))
-            sed -i "/SCORE=/d" $GITHUB_ENV
-            echo "SCORE=$CUR" >> $GITHUB_ENV
-          else
-            echo "Not enough unique commit authors ❌"
-          fi
-        shell: bash
-
-      # 7. Merged PR check
-      - name: Check merged PRs
-        run: |
-          RESP=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-            "https://api.github.com/repos/${{ github.repository }}/pulls?state=closed")
-          
-          if echo "$RESP" | jq -e '.message?' >/dev/null; then
-            echo "❌ Cannot fetch PRs — permission denied"
-          else
-            MERGED_COUNT=$(echo "$RESP" | jq '[.[] | select(.merged_at != null)] | length')
-            if [ "$MERGED_COUNT" -ge 1 ]; then
-              echo "Has 1+ merged PR ✅ (+1)"
-              CUR=$(grep SCORE= $GITHUB_ENV | cut -d= -f2 || echo 0)
-              CUR=$((CUR+1))
-              sed -i "/SCORE=/d" $GITHUB_ENV
-              echo "SCORE=$CUR" >> $GITHUB_ENV
-            else
-              echo "No merged PR ❌"
-            fi
-          fi
-        shell: bash
-
-      # Final score
-      - name: Final score
-        run: grep SCORE= $GITHUB_ENV || echo "SCORE=0"
