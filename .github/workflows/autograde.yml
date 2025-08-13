@@ -10,7 +10,6 @@ jobs:
     permissions:
       contents: read
       pull-requests: read
-      metadata: read
 
     steps:
       - name: Checkout repo
@@ -77,18 +76,25 @@ jobs:
           fi
         shell: bash
 
-      # 5. Check collaborators
+      # 5. Check collaborators (with permission check)
       - name: Check collaborators via GitHub API
         run: |
-          COLLAB_COUNT=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}"             https://api.github.com/repos/${{ github.repository }}/collaborators | jq '. | length')
-          if [ "$COLLAB_COUNT" -ge 3 ]; then
-            echo "Has 2+ collaborators ✅ (+2)"
-            CUR=$(grep SCORE= $GITHUB_ENV | cut -d= -f2)
-            CUR=$((CUR+2))
-            sed -i "/SCORE=/d" $GITHUB_ENV
-            echo "SCORE=$CUR" >> $GITHUB_ENV
+          RESP=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            https://api.github.com/repos/${{ github.repository }}/collaborators)
+          
+          if echo "$RESP" | jq -e '.message?' >/dev/null; then
+            echo "❌ Cannot fetch collaborators — permission denied"
           else
-            echo "Not enough collaborators ❌"
+            COLLAB_COUNT=$(echo "$RESP" | jq '. | length')
+            if [ "$COLLAB_COUNT" -ge 3 ]; then
+              echo "Has 2+ collaborators ✅ (+2)"
+              CUR=$(grep SCORE= $GITHUB_ENV | cut -d= -f2)
+              CUR=$((CUR+2))
+              sed -i "/SCORE=/d" $GITHUB_ENV
+              echo "SCORE=$CUR" >> $GITHUB_ENV
+            else
+              echo "Not enough collaborators ❌"
+            fi
           fi
         shell: bash
 
@@ -110,18 +116,25 @@ jobs:
       # 7. Merged PR check
       - name: Check merged PRs
         run: |
-          MERGED_COUNT=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}"             "https://api.github.com/repos/${{ github.repository }}/pulls?state=closed" | jq '[.[] | select(.merged_at != null)] | length')
-          if [ "$MERGED_COUNT" -ge 1 ]; then
-            echo "Has 1+ merged PR ✅ (+1)"
-            CUR=$(grep SCORE= $GITHUB_ENV | cut -d= -f2)
-            CUR=$((CUR+1))
-            sed -i "/SCORE=/d" $GITHUB_ENV
-            echo "SCORE=$CUR" >> $GITHUB_ENV
+          RESP=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            "https://api.github.com/repos/${{ github.repository }}/pulls?state=closed")
+          
+          if echo "$RESP" | jq -e '.message?' >/dev/null; then
+            echo "❌ Cannot fetch PRs — permission denied"
           else
-            echo "No merged PR ❌"
+            MERGED_COUNT=$(echo "$RESP" | jq '[.[] | select(.merged_at != null)] | length')
+            if [ "$MERGED_COUNT" -ge 1 ]; then
+              echo "Has 1+ merged PR ✅ (+1)"
+              CUR=$(grep SCORE= $GITHUB_ENV | cut -d= -f2)
+              CUR=$((CUR+1))
+              sed -i "/SCORE=/d" $GITHUB_ENV
+              echo "SCORE=$CUR" >> $GITHUB_ENV
+            else
+              echo "No merged PR ❌"
+            fi
           fi
         shell: bash
 
       # Final score
       - name: Final score
-        run: cat $GITHUB_ENV | grep SCORE=
+        run: grep SCORE= $GITHUB_ENV
