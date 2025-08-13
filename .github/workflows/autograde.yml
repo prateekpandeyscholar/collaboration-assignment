@@ -25,11 +25,11 @@ jobs:
             echo "File exists ✅ (+1)"
             CUR=$(grep SCORE= $GITHUB_ENV | cut -d= -f2 || echo 0)
             CUR=$((CUR+1))
-            echo "SCORE=$CUR" > $GITHUB_ENV
+            sed -i "/SCORE=/d" $GITHUB_ENV
+            echo "SCORE=$CUR" >> $GITHUB_ENV
           else
             echo "Missing team_greetings.md ❌"
           fi
-        shell: bash
 
       # 2. Roll number format correct
       - name: Check roll number format
@@ -38,11 +38,11 @@ jobs:
             echo "Roll number format correct ✅ (+1)"
             CUR=$(grep SCORE= $GITHUB_ENV | cut -d= -f2 || echo 0)
             CUR=$((CUR+1))
-            echo "SCORE=$CUR" > $GITHUB_ENV
+            sed -i "/SCORE=/d" $GITHUB_ENV
+            echo "SCORE=$CUR" >> $GITHUB_ENV
           else
             echo "Roll number format incorrect ❌"
           fi
-        shell: bash
 
       # 3. Roll number count > 2
       - name: Check roll number count
@@ -52,11 +52,11 @@ jobs:
             echo "More than 2 roll numbers ✅ (+1)"
             CUR=$(grep SCORE= $GITHUB_ENV | cut -d= -f2 || echo 0)
             CUR=$((CUR+1))
-            echo "SCORE=$CUR" > $GITHUB_ENV
+            sed -i "/SCORE=/d" $GITHUB_ENV
+            echo "SCORE=$CUR" >> $GITHUB_ENV
           else
             echo "Not enough roll numbers ❌"
           fi
-        shell: bash
 
       # 4. Branch name format correct
       - name: Check branch name format
@@ -66,13 +66,13 @@ jobs:
             echo "Branch name format correct ✅ (+2)"
             CUR=$(grep SCORE= $GITHUB_ENV | cut -d= -f2 || echo 0)
             CUR=$((CUR+2))
-            echo "SCORE=$CUR" > $GITHUB_ENV
+            sed -i "/SCORE=/d" $GITHUB_ENV
+            echo "SCORE=$CUR" >> $GITHUB_ENV
           else
             echo "Branch name format incorrect ❌"
           fi
-        shell: bash
 
-      # 5. Check collaborators
+      # 5. Check collaborators (with permission check)
       - name: Check collaborators via GitHub API
         run: |
           RESP=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
@@ -86,3 +86,52 @@ jobs:
               echo "Has 2+ collaborators ✅ (+2)"
               CUR=$(grep SCORE= $GITHUB_ENV | cut -d= -f2 || echo 0)
               CUR=$((CUR+2))
+              sed -i "/SCORE=/d" $GITHUB_ENV
+              echo "SCORE=$CUR" >> $GITHUB_ENV
+            else
+              echo "Not enough collaborators ❌"
+            fi
+          fi
+
+      # 6. Unique commit authors
+      - name: Check unique commit authors
+        run: |
+          AUTHORS=$(git log --format='%aN' | sort -u | wc -l)
+          if [ "$AUTHORS" -ge 2 ]; then
+            echo "Has 2+ unique commit authors ✅ (+2)"
+            CUR=$(grep SCORE= $GITHUB_ENV | cut -d= -f2 || echo 0)
+            CUR=$((CUR+2))
+            sed -i "/SCORE=/d" $GITHUB_ENV
+            echo "SCORE=$CUR" >> $GITHUB_ENV
+          else
+            echo "Not enough unique commit authors ❌"
+          fi
+
+      # 7. Merged PR check
+      - name: Check merged PRs
+        run: |
+          RESP=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            "https://api.github.com/repos/${{ github.repository }}/pulls?state=closed")
+          
+          if echo "$RESP" | jq -e '.message?' >/dev/null; then
+            echo "❌ Cannot fetch PRs — permission denied"
+          else
+            MERGED_COUNT=$(echo "$RESP" | jq '[.[] | select(.merged_at != null)] | length')
+            if [ "$MERGED_COUNT" -ge 1 ]; then
+              echo "Has 1+ merged PR ✅ (+1)"
+              CUR=$(grep SCORE= $GITHUB_ENV | cut -d= -f2 || echo 0)
+              CUR=$((CUR+1))
+              sed -i "/SCORE=/d" $GITHUB_ENV
+              echo "SCORE=$CUR" >> $GITHUB_ENV
+            else
+              echo "No merged PR ❌"
+            fi
+          fi
+
+      # Final score and GitHub Classroom output
+      - name: Save score for GitHub Classroom
+        run: |
+          SCORE_VAL=$(grep SCORE= $GITHUB_ENV | cut -d= -f2 || echo 0)
+          echo "Final SCORE=$SCORE_VAL"
+          mkdir -p .github/classroom
+          echo "{\"score\": $SCORE_VAL, \"max_score\": 10}" > .github/classroom/results.json
