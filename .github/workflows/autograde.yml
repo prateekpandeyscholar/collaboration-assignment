@@ -155,7 +155,7 @@ jobs:
           echo "Final SCORE=$SCORE_VAL"
 
           mkdir -p .github/classroom
-          cat <<EOF > .github/classroom/results.json
+          cat <<'EOF' > .github/classroom/results.json
 {
   "version": 1,
   "tests": [
