@@ -174,5 +174,5 @@ jobs:
               { "name": "2+ commit authors (API)",  "score": $T6, "max_score": 3 }
             ],
             "summary": "Total score $SCORE_VAL out of 10"
-            }
+          }
           EOF
