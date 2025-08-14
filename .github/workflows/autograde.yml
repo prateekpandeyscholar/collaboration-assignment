@@ -163,16 +163,16 @@ jobs:
           mkdir -p .github/classroom
       
           cat > .github/classroom/results.json <<EOF
-      {
-        "version": 1,
-        "tests": [
-          { "name": "team_greetings.md exists", "score": $T1, "max_score": 1 },
-          { "name": "Roll number format",       "score": $T2, "max_score": 1 },
-          { "name": "3+ unique roll numbers",   "score": $T3, "max_score": 1 },
-          { "name": "Branch name feature/ID",   "score": $T4, "max_score": 2 },
-          { "name": "2+ collaborators (API)",   "score": $T5, "max_score": 2 },
-          { "name": "2+ commit authors (API)",  "score": $T6, "max_score": 3 }
-        ],
-        "summary": "Total score $SCORE_VAL out of 10"
-      }
-      EOF
+          {
+           "version": 1,
+            "tests": [
+              { "name": "team_greetings.md exists", "score": $T1, "max_score": 1 },
+              { "name": "Roll number format",       "score": $T2, "max_score": 1 },
+              { "name": "3+ unique roll numbers",   "score": $T3, "max_score": 1 },
+              { "name": "Branch name feature/ID",   "score": $T4, "max_score": 2 },
+              { "name": "2+ collaborators (API)",   "score": $T5, "max_score": 2 },
+              { "name": "2+ commit authors (API)",  "score": $T6, "max_score": 3 }
+            ],
+            "summary": "Total score $SCORE_VAL out of 10"
+            }
+          EOF
