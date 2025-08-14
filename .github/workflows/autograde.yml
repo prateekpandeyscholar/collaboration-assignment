@@ -1,4 +1,4 @@
- name: Autograding
+name: Autograding
 
 on:
   push:
