@@ -1,69 +1,90 @@
-# Collaborative Development Assignment
+# Team Greetings Assignment
 
-## Overview
-You and your teammate(s) will collaborate on this repository to practice:
-- Creating branches
-- Opening Pull Requests (PRs)
-- Reviewing and approving PRs
-- Merging changes
-- Following a branch naming convention
-
-This assignment will be **autograded** to verify collaboration.
+## Objective
+In this assignment, your goal is to collaborate with your team and complete a small GitHub-based task to demonstrate basic Git usage, collaboration, and correct formatting.
 
 ---
 
-## Instructions
+## What You Need to Do
 
-### Step 1: Accept the Assignment
-One team member accepts the GitHub Classroom invitation and **adds teammates**:
-1. Go to **Settings → Collaborators & teams → Manage Access**.
-2. Invite your teammate(s) via their GitHub username.
+1. **Create a `team_greetings.md` file** in the root of your repository.  
+   - This file should contain **greetings from your team members** in the following format:
 
----
+     ```
+     <RollNumber>: <Greeting>
+     ```
 
-### Step 2: Create a Branch
-Each member should:
-1. Create a branch named `branch-rollno` (replace `rollno` with your roll number in the format 231B227).
-   ```bash
-   git checkout -b branch-231B227
-   ```
-2. Edit the `team_greetings.md` file.
-3. Add your roll number and a short greeting in this format:
-   ```
-   231B227: Your Greeting Here
-   ```
+   - Example:
+
+     ```
+     221B101: Hey
+     221B102: Hello
+     221B103: Hi
+     ```
+
+   - **Important**: Use your actual roll numbers. Each member should contribute at least one line.
 
 ---
 
-### Step 3: Commit and Push
-```bash
-git add team_greetings.md
-git commit -m "Added greeting for <Roll No>"
-git push origin branch-<Roll No>
-```
+2. **Ensure your roll numbers are formatted correctly**  
+   - Format: `123A456` (3 digits, 1 uppercase letter, 3 digits)  
+   - Example: `221B101`  
 
 ---
 
-### Step 4: Open a Pull Request
-1. Go to your repository on GitHub.
-2. Click **Compare & Pull Request**.
-3. Request **review** from a teammate.
-4. Teammate approves and merges your PR into `main`.
+3. **Add at least 3 unique roll numbers** in `team_greetings.md`.
 
 ---
 
-### Step 5: Review a Teammate’s PR
-- Each member must approve at least one PR from another member.
+4. **Branch naming**  
+   - Create your feature branch following this format:
+
+     ```
+     feature/<YourRollNumber>
+     ```
+
+   - Example: `feature/221B101`
 
 ---
 
-## Autograding Rules
-You will PASS if:
-1. `team_greetings.md` exists ✅
-2. At least two valid roll numbers are present ✅
-3. At least two unique commit authors are found ✅
-4. At least two correctly named branches (`branch-rollno`) exist ✅
+5. **Collaborators**  
+   - Make sure your repository has **at least 2 collaborators** added via GitHub.  
+   - Collaborators must be other students in your team.
 
 ---
 
-💡 **Tip:** This assignment is about process, not coding skill. Make sure everyone participates.
+6. **Commit authors**  
+   - Ensure there are **at least 2 unique commit authors** in the repository.  
+   - Each team member should make at least one commit to satisfy this requirement.
+
+---
+
+## Scoring
+
+| Test                                     | Points |
+|------------------------------------------|--------|
+| `team_greetings.md` exists               | 1      |
+| Roll number format correct                | 1      |
+| 3+ unique roll numbers                    | 1      |
+| Branch name feature/ID                    | 2      |
+| 2+ collaborators (via GitHub API)        | 2      |
+| 2+ commit authors (via GitHub API)       | 3      |
+| **Total**                                | 10     |
+
+---
+
+## Submission
+
+- Push all your changes to your GitHub repository **before the deadline**.  
+- The autograder will automatically check the file, branch, collaborators, and commits.  
+- Make sure your GitHub username is correct and commits are properly attributed.  
+
+---
+
+## Notes
+
+- Only the `team_greetings.md` file and proper GitHub setup are graded.  
+- Follow the instructions exactly for full points.  
+- Any formatting issues or missing information may result in lost points.
+
+Good luck and happy collaborating! 🚀
