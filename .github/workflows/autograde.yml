@@ -41,7 +41,7 @@ jobs:
             echo "Missing team_greetings.md ❌"
           fi
 
-      # 2) Roll number format present (+1) e.g. 123A456
+      # 2) Roll number format present (+1)
       - name: Check roll number format
         shell: bash
         run: |
@@ -70,7 +70,7 @@ jobs:
             echo "Not enough roll numbers ❌ (found ${COUNT:-0})"
           fi
 
-      # 4) Branch name format (+2): feature/123A456
+      # 4) Branch name format (+2)
       - name: Check branch name format
         shell: bash
         run: |
@@ -96,15 +96,12 @@ jobs:
           REPO="${GH_REPO#*/}"
           RESP=$(curl -sf -H "Authorization: token ${GH_TOKEN}" \
             "https://api.github.com/repos/${OWNER}/${REPO}/collaborators" || echo "")
-
           if [ -z "$RESP" ] || echo "$RESP" | jq -e '.message?' >/dev/null; then
-            echo "⚠️ Cannot fetch collaborators — skipping points."
+            echo "⚠️  Cannot fetch collaborators — skipping points."
             exit 0
           fi
-
           COLLAB_COUNT=$(echo "$RESP" | jq 'length')
-          echo "Found $COLLAB_COUNT collaborators."
-
+          echo "Found $COLLAB_COUNT collaborators (via API)."
           if [ "$COLLAB_COUNT" -ge 2 ]; then
             echo "Has 2+ collaborators ✅ (+2)"
             CUR=$(grep -Eo '^SCORE=[0-9]+' "$GITHUB_ENV" | cut -d= -f2 || echo 0)
@@ -115,7 +112,7 @@ jobs:
             echo "Not enough collaborators ❌"
           fi
 
-      # 6) Unique commit authors by GitHub username via API (+2)
+      # 6) Unique commit authors (+3)
       - name: Check unique commit authors
         shell: bash
         env:
@@ -126,28 +123,24 @@ jobs:
           REPO="${GH_REPO#*/}"
           RESP=$(curl -sf -H "Authorization: token ${GH_TOKEN}" \
             "https://api.github.com/repos/${OWNER}/${REPO}/commits?per_page=100" || echo "")
-
           if [ -z "$RESP" ] || echo "$RESP" | jq -e '.message?' >/dev/null; then
-            echo "⚠️ Cannot fetch commits — skipping points."
+            echo "⚠️  Cannot fetch commits — skipping points."
             exit 0
           fi
-
-          AUTHORS=$(echo "$RESP" | jq -r '[ .[].author.login, .[].committer.login ] | map(select(. != null)) | unique | .[]?')
+          AUTHORS=$(echo "$RESP" | jq -r '[ .[].author.login, .[].committer.login ] | map(select(. != null)) | unique | .[]?' )
           COUNT=$(echo "$AUTHORS" | grep -c . || true)
-
-          echo "Unique commit authors: $COUNT"
-          echo "$AUTHORS" | sed 's/^/  - /'
-
+          echo "Unique GitHub usernames found in commit history: $COUNT"
           if [ "${COUNT:-0}" -ge 2 ]; then
-            echo "Has 2+ unique commit authors ✅ (+2)"
+            echo "Has 2+ unique commit authors ✅ (+3)"
             CUR=$(grep -Eo '^SCORE=[0-9]+' "$GITHUB_ENV" | cut -d= -f2 || echo 0)
-            CUR=$((CUR+2))
+            CUR=$((CUR+3))
             sed -i "/^SCORE=/d" "$GITHUB_ENV"
-            { echo "SCORE=$CUR"; echo "T6=2"; } >> "$GITHUB_ENV"
+            { echo "SCORE=$CUR"; echo "T6=3"; } >> "$GITHUB_ENV"
           else
             echo "Not enough unique commit authors ❌"
           fi
 
+      # Save results
       - name: Save score for GitHub Classroom
         shell: bash
         run: |
@@ -160,19 +153,19 @@ jobs:
           T6=$(grep -Eo '^T6=[0-9]+' "$GITHUB_ENV" | cut -d= -f2 || echo 0)
 
           echo "Final SCORE=$SCORE_VAL"
-          mkdir -p .github/classroom
 
+          mkdir -p .github/classroom
           cat > .github/classroom/results.json <<EOF
-          {
-            "version": 1,
-            "tests": [
-              { "name": "team_greetings.md exists", "score": $T1, "max_score": 1 },
-              { "name": "Roll number format",       "score": $T2, "max_score": 1 },
-              { "name": "3+ unique roll numbers",   "score": $T3, "max_score": 1 },
-              { "name": "Branch name feature/ID",   "score": $T4, "max_score": 2 },
-              { "name": "2+ collaborators (API)",   "score": $T5, "max_score": 2 },
-              { "name": "2+ commit authors (API)",  "score": $T6, "max_score": 2 }
-            ],
-            "summary": "Total score $SCORE_VAL out of 9"
-          }
-          EOF
+{
+"version": 1,
+"tests": [
+  { "name": "team_greetings.md exists", "score": $T1, "max_score": 1 },
+  { "name": "Roll number format", "score": $T2, "max_score": 1 },
+  { "name": "3+ unique roll numbers", "score": $T3, "max_score": 1 },
+  { "name": "Branch name feature/ID", "score": $T4, "max_score": 2 },
+  { "name": "2+ collaborators (API)", "score": $T5, "max_score": 2 },
+  { "name": "2+ commit authors (API)", "score": $T6, "max_score": 3 }
+],
+"summary": "Total score $SCORE_VAL out of 10"
+}
+EOF
